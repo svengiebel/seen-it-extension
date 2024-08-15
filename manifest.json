@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "SeenIt",
+  "version": "1.0",
+  "description": "Extension to hide already seen items on site.",
+  "permissions": ["scripting", "storage", "activeTab"],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.immobilienscout24.de/*"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ]
+}
