@@ -1,23 +1,4 @@
 const KEY = "immoscout_hidden_ids";
-Array.from(document.getElementsByClassName("result-list__listing")).map((e) => {
-  const id = e.getAttribute("data-id");
-  const gridElement = e.querySelector(".grid.grid-flex");
-  // Now you can work with gridElement
-  console.log(gridElement);
-  // Create the button element
-  const button = document.createElement("button");
-
-  // Set the button text
-  button.textContent = "Ausblenden";
-
-  // Add the onclick event handler
-  button.onclick = () => handlerFunction(id);
-  button.classList.add("button", "button-small");
-
-  // Append the button to the parent element
-  gridElement.appendChild(button);
-  return gridElement; // if you want to create an array of these elements
-});
 function handlerFunction(id) {
   let currentHiddenIds = localStorage.getItem(KEY);
   if (currentHiddenIds) {
@@ -62,7 +43,6 @@ function updateView() {
           const location = e.getElementsByClassName(
             "result-list-entry__map-link",
           );
-          console.log({ data });
           gridElement.insertAdjacentHTML(
             "afterend",
             `
@@ -85,7 +65,6 @@ function updateView() {
         const id = e.getAttribute("hidden-id");
         removeId(id);
         let showElement = document.querySelector(`[data-id="${id}"]`);
-        console.log({ showElement });
         const gridElement = showElement.querySelector(".grid.grid-flex");
         gridElement.style.display = "flex";
         showElement.style.overflow = "auto";
@@ -102,10 +81,33 @@ updateView();
 
 // Listen for messages from the popup
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
-  if (message.action === "resetLocalStorage") {
+  if (message.action === "RESET_LOCAL_STORAGE") {
     // Get all items from setLocalStorage
     localStorage.setItem(KEY, "[]");
     // Send the data back to the popup
     sendResponse(true);
+  }
+  if (message.type === "URL_CHANGED") {
+    Array.from(document.getElementsByClassName("result-list__listing")).map(
+      (e) => {
+        const id = e.getAttribute("data-id");
+        const gridElement = e.querySelector(".grid.grid-flex");
+        // Now you can work with gridElement
+        // Create the button element
+        const button = document.createElement("button");
+
+        // Set the button text
+        button.textContent = "Ausblenden";
+
+        // Add the onclick event handler
+        button.onclick = () => handlerFunction(id);
+        button.classList.add("button", "button-small");
+
+        // Append the button to the parent element
+        gridElement.appendChild(button);
+        return gridElement; // if you want to create an array of these elements
+      },
+    );
+    updateView();
   }
 });

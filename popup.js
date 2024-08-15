@@ -10,7 +10,7 @@ document.addEventListener("DOMContentLoaded", function () {
       const activeTab = tabs[0];
       chrome.tabs.sendMessage(
         activeTab.id,
-        { action: "resetLocalStorage" },
+        { action: "RESET_LOCAL_STORAGE" },
         function (response) {
           // Process the localStorage data received from content script
           console.log("LocalStorage Data:", response);
