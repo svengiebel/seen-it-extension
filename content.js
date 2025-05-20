@@ -1,9 +1,26 @@
 const KEY = "immoscout_hidden_ids";
+let cachedHiddenIds = null;
+
+function getHiddenIds() {
+  if (!cachedHiddenIds) {
+    const stored = localStorage.getItem(KEY);
+    cachedHiddenIds = stored ? JSON.parse(stored) : [];
+  }
+  return cachedHiddenIds;
+}
+
+function updateHiddenIds(newIds) {
+  cachedHiddenIds = newIds;
+  localStorage.setItem(KEY, JSON.stringify(newIds));
+}
+
 function handlerFunction(id) {
   let currentHiddenIds = localStorage.getItem(KEY);
   if (currentHiddenIds) {
     let hiddenIdsArray = JSON.parse(currentHiddenIds);
-    localStorage.setItem(KEY, JSON.stringify([...hiddenIdsArray, id]));
+    const hiddenIdsSet = new Set(hiddenIdsArray);
+    hiddenIdsSet.add(id);
+    localStorage.setItem(KEY, JSON.stringify([...hiddenIdsSet]));
   } else {
     localStorage.setItem(KEY, JSON.stringify([id]));
   }
@@ -13,20 +30,20 @@ function removeId(id) {
   let currentHiddenIds = localStorage.getItem(KEY);
   if (currentHiddenIds) {
     let hiddenIdsArray = JSON.parse(currentHiddenIds);
-    localStorage.setItem(
-      KEY,
-      JSON.stringify(hiddenIdsArray.filter((i) => i !== id)),
-    );
+    const hiddenIdsSet = new Set(hiddenIdsArray);
+    hiddenIdsSet.delete(id);
+    localStorage.setItem(KEY, JSON.stringify([...hiddenIdsSet]));
   }
 }
 function updateView() {
   let currentHiddenIds = localStorage.getItem(KEY);
   if (currentHiddenIds) {
     let hiddenIdsArray = JSON.parse(currentHiddenIds);
+    const hiddenIdsSet = new Set(hiddenIdsArray);
     Array.from(document.getElementsByClassName("result-list__listing")).map(
       (e) => {
         let attrId = e.getAttribute("data-id");
-        if (hiddenIdsArray.includes(String(attrId))) {
+        if (hiddenIdsSet.has(String(attrId))) {
           const gridElement = e.querySelector(".grid.grid-flex");
           const showButton = e.querySelector(".show-button");
           if (showButton) {
@@ -49,8 +66,8 @@ function updateView() {
             <div id="replace-box-${attrId}" style="display: flex; justify-content: space-between; flex-direction: row; width: 100%; flex: 1;">
               <div>
               ${Array.from(data)
-                .map((d) => d.firstChild.textContent)
-                .join("  -  ")} | ${location.item(0).textContent}
+              .map((d) => d.firstChild.textContent)
+              .join("  -  ")} | ${location.item(0).textContent}
               </div>
               <button class="link-text right show-button" hidden-id="${attrId}">
                Einblenden</button>
