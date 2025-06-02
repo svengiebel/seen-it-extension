@@ -60,14 +60,15 @@ function updateView() {
           const location = e.getElementsByClassName(
             "result-list-entry__map-link",
           );
+          const item0 = location.item(0);
           gridElement.insertAdjacentHTML(
             "afterend",
             `
             <div id="replace-box-${attrId}" style="display: flex; justify-content: space-between; flex-direction: row; width: 100%; flex: 1;">
               <div>
               ${Array.from(data)
-              .map((d) => d.firstChild.textContent)
-              .join("  -  ")} | ${location.item(0).textContent}
+                .map((d) => d.firstChild.textContent)
+                .join("  -  ")} | ${item0 ? item0.textContent : ""}
               </div>
               <button class="link-text right show-button" hidden-id="${attrId}">
                Einblenden</button>
@@ -87,7 +88,10 @@ function updateView() {
         showElement.style.overflow = "auto";
         showElement.style.maxHeight = "none";
         showElement.style.backgroundColor = "white";
-        document.querySelector(`#replace-box-${id}`).remove();
+        const t = document.querySelector(`#replace-box-${id}`);
+        if (t) {
+          t.remove();
+        }
       });
     });
   } else {
