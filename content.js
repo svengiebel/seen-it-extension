@@ -89,6 +89,31 @@ function observeListings() {
   observer.observe(main, { childList: true, subtree: true });
 }
 
+function triggerButtonsIfUrlChanged() {
+  // Hier ggf. prüfen, ob der pagenumber-Parameter sich geändert hat.
+  setTimeout(insertSeenButtons, 500);
+}
+
+// Original-Methoden speichern
+const originalPushState = history.pushState;
+const originalReplaceState = history.replaceState;
+
+// Methoden überschreiben
+history.pushState = function () {
+  alert("test");
+  originalPushState.apply(this, arguments);
+  window.dispatchEvent(new Event("immo-url-changed"));
+};
+history.replaceState = function () {
+  alert("test");
+  originalReplaceState.apply(this, arguments);
+  window.dispatchEvent(new Event("immo-url-changed"));
+};
+
+// EventListener ergänzen
+window.addEventListener("immo-url-changed", triggerButtonsIfUrlChanged);
+window.addEventListener("popstate", triggerButtonsIfUrlChanged);
+
 document.addEventListener("DOMContentLoaded", () => {
   setTimeout(() => {
     insertSeenButtons();
@@ -98,5 +123,14 @@ document.addEventListener("DOMContentLoaded", () => {
 window.addEventListener("load", () => {
   setTimeout(() => {
     insertSeenButtons();
+    let oldHref = document.location.href;
+    setInterval(() => {
+      if (oldHref !== document.location.href) {
+        oldHref = document.location.href;
+        setTimeout(() => {
+          insertSeenButtons();
+        }, 1500);
+      }
+    }, 500);
   }, 1000);
 });
