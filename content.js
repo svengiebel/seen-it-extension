@@ -1,134 +1,102 @@
-const KEY = "immoscout_hidden_ids";
-let cachedHiddenIds = null;
+const KEY = "immo_seen_ids";
 
-function getHiddenIds() {
-  if (!cachedHiddenIds) {
-    const stored = localStorage.getItem(KEY);
-    cachedHiddenIds = stored ? JSON.parse(stored) : [];
-  }
-  return cachedHiddenIds;
+function loadSeenIds() {
+  const data = localStorage.getItem(KEY);
+  return data ? JSON.parse(data) : [];
 }
 
-function updateHiddenIds(newIds) {
-  cachedHiddenIds = newIds;
-  localStorage.setItem(KEY, JSON.stringify(newIds));
+function saveSeenIds(ids) {
+  localStorage.setItem("immo_seen_ids", JSON.stringify(ids));
 }
 
-function handlerFunction(id) {
-  let currentHiddenIds = localStorage.getItem(KEY);
-  if (currentHiddenIds) {
-    let hiddenIdsArray = JSON.parse(currentHiddenIds);
-    const hiddenIdsSet = new Set(hiddenIdsArray);
-    hiddenIdsSet.add(id);
-    localStorage.setItem(KEY, JSON.stringify([...hiddenIdsSet]));
-  } else {
-    localStorage.setItem(KEY, JSON.stringify([id]));
+function unmarkAsSeen(listing) {
+  const id = listing.getAttribute("data-obid");
+  listing.classList.remove("immo-gesehen");
+  const overlay = listing.querySelector(".immo-gesehen-overlay");
+  if (overlay) {
+    overlay.remove(); // besser als removeChild, funktioniert immer!
   }
-  updateView();
+  const ids = localStorage.getItem(KEY);
+  let idsJson = JSON.parse(ids);
+  idsJson = idsJson.filter((d) => d !== id);
+  saveSeenIds(idsJson);
+  addButtonForListing(listing, idsJson);
 }
-function removeId(id) {
-  let currentHiddenIds = localStorage.getItem(KEY);
-  if (currentHiddenIds) {
-    let hiddenIdsArray = JSON.parse(currentHiddenIds);
-    const hiddenIdsSet = new Set(hiddenIdsArray);
-    hiddenIdsSet.delete(id);
-    localStorage.setItem(KEY, JSON.stringify([...hiddenIdsSet]));
-  }
-}
-function updateView() {
-  let currentHiddenIds = localStorage.getItem(KEY);
-  if (currentHiddenIds) {
-    let hiddenIdsArray = JSON.parse(currentHiddenIds);
-    const hiddenIdsSet = new Set(hiddenIdsArray);
-    Array.from(document.getElementsByClassName("result-list__listing")).map(
-      (e) => {
-        let attrId = e.getAttribute("data-id");
-        if (hiddenIdsSet.has(String(attrId))) {
-          const gridElement = e.querySelector(".grid.grid-flex");
-          const showButton = e.querySelector(".show-button");
-          if (showButton) {
-            return false;
-          }
-          gridElement.style.display = "none";
-          e.style.maxHeight = "50px"; // Set max-height to 200 pixels
-          e.style.overflowY = "auto"; // Enable vertical scrolling if content exceeds max-height
-          e.style.backgroundColor = "rgba(252, 217, 162, 0.2)"; // Example of setting another style property
-          e.style.overflow = "hidden";
-          const data = e.getElementsByClassName(
-            "result-list-entry__primary-criterion",
-          );
-          const location = e.getElementsByClassName(
-            "result-list-entry__map-link",
-          );
-          const item0 = location.item(0);
-          gridElement.insertAdjacentHTML(
-            "afterend",
-            `
-            <div id="replace-box-${attrId}" style="display: flex; justify-content: space-between; flex-direction: row; width: 100%; flex: 1;">
-              <div>
-              ${Array.from(data)
-                .map((d) => d.firstChild.textContent)
-                .join("  -  ")} | ${item0 ? item0.textContent : ""}
-              </div>
-              <button class="link-text right show-button" hidden-id="${attrId}">
-               Einblenden</button>
-            </div>
-            `,
-          );
-        }
-      },
-    );
-    Array.from(document.getElementsByClassName("show-button")).map((e) => {
-      e.addEventListener("click", function (b) {
-        const id = e.getAttribute("hidden-id");
-        removeId(id);
-        let showElement = document.querySelector(`[data-id="${id}"]`);
-        const gridElement = showElement.querySelector(".grid.grid-flex");
-        gridElement.style.display = "flex";
-        showElement.style.overflow = "auto";
-        showElement.style.maxHeight = "none";
-        showElement.style.backgroundColor = "white";
-        const t = document.querySelector(`#replace-box-${id}`);
-        if (t) {
-          t.remove();
-        }
-      });
-    });
-  } else {
-    return;
+
+function markAsSeen(listing) {
+  listing.classList.add("immo-gesehen");
+  let overlay = listing.querySelector(".immo-gesehen-overlay");
+  if (!overlay) {
+    overlay = document.createElement("div");
+    overlay.onclick = function (e) {
+      e.stopPropagation();
+      e.preventDefault();
+      unmarkAsSeen(listing);
+    };
+    overlay.className = "immo-gesehen-overlay";
+    overlay.textContent = "GESEHEN";
+    listing.appendChild(overlay);
   }
 }
-updateView();
 
-// Listen for messages from the popup
-chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
-  if (message.action === "RESET_LOCAL_STORAGE") {
-    // Get all items from setLocalStorage
-    localStorage.setItem(KEY, "[]");
-    // Send the data back to the popup
-    sendResponse(true);
+function addButtonForListing(listing, seenIds) {
+  const id = listing.getAttribute("data-obid");
+  if (!id) return;
+
+  // Verhindere Doppel-Buttons
+  if (listing.querySelector(".immo-gesehen-btn")) return;
+
+  // Button erstellen
+  const btn = document.createElement("button");
+  btn.className = "immo-gesehen-btn";
+  btn.textContent = "Als gesehen markieren";
+  btn.onclick = function (e) {
+    e.stopPropagation();
+    e.preventDefault();
+    let ids = loadSeenIds();
+    if (!ids.includes(id)) {
+      ids.push(id);
+      saveSeenIds(ids);
+    }
+    markAsSeen(listing);
+    btn.remove();
+  };
+
+  listing.style.position = "relative"; // Für Overlay & Button
+  listing.appendChild(btn);
+
+  // Schon gesehene markieren
+  if (seenIds.includes(id)) {
+    markAsSeen(listing);
+    btn.remove();
   }
-  if (message.type === "URL_CHANGED") {
-    Array.from(document.getElementsByClassName("result-list__listing")).map(
-      (e) => {
-        const id = e.getAttribute("data-id");
-        const gridElement = e.querySelector(".grid.grid-flex");
-        // Now you can work with gridElement
-        // Create the button element
-        const button = document.createElement("button");
+}
 
-        // Set the button text
-        button.textContent = "Ausblenden";
+function insertSeenButtons() {
+  const listings = document.querySelectorAll(".listing-card[data-obid]");
+  const seenIds = loadSeenIds();
 
-        // Add the onclick event handler
-        button.onclick = () => handlerFunction(id);
-        button.classList.add("button", "button-small");
+  listings.forEach((listing) => {
+    addButtonForListing(listing, seenIds);
+  });
+}
 
-        // Append the button to the parent element
-        gridElement.appendChild(button);
-        return gridElement; // if you want to create an array of these elements
-      },
-    );
-    updateView();
-  }
+// Bei DOM-Änderungen reagieren (z.B. nachladen der Listings)
+function observeListings() {
+  const main = document.querySelector("main");
+  if (!main) return;
+  const observer = new MutationObserver(insertSeenButtons);
+  observer.observe(main, { childList: true, subtree: true });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  setTimeout(() => {
+    insertSeenButtons();
+    observeListings();
+  }, 1000);
+});
+window.addEventListener("load", () => {
+  setTimeout(() => {
+    insertSeenButtons();
+  }, 1000);
 });

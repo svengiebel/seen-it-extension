@@ -2,22 +2,16 @@
   "manifest_version": 3,
   "name": "SeenIt",
   "version": "1.0",
-  "description": "Extension to hide already seen items on site.",
-  "permissions": ["webNavigation", "scripting", "storage", "activeTab", "tabs"],
-  "action": {
-    "default_popup": "popup.html"
-  },
-  "background": {
-    "matches": ["https://www.immobilienscout24.de/*"],
-    "service_worker": "background.js",
-    "type": "module"
-  },
+  "description": "Markiert Anzeigen als gesehen oder nicht gesehen.",
+  "permissions": ["storage"],
   "content_scripts": [
     {
-      "matches": ["https://www.immobilienscout24.de/*"],
+      "matches": [
+        "https://www.immobilienscout24.de/Suche/*",
+        "https://www.immobilienscout24.de/*"
+      ],
       "js": ["content.js"],
-      "run_at": "document_end"
+      "css": ["style.css"]
     }
-  ],
-  "host_permissions": ["https://www.immobilienscout24.de/*"]
+  ]
 }
