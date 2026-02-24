@@ -1,0 +1,19 @@
+# macOS
+.DS_Store
+
+# Editor/IDE
+.vscode/
+.idea/
+
+# Extension build artifacts
+dist/
+*.xpi
+*.zip
+
+# Safari/Xcode generated files
+*.xcodeproj/
+*.xcworkspace/
+DerivedData/
+build/
+xcuserdata/
+*.xcuserstate

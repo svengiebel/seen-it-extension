@@ -9,15 +9,27 @@
     "48": "icons/icon-48.png",
     "128": "icons/icon-128.png"
   },
-  "permissions": ["storage"],
+  "permissions": [
+    "storage"
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "seenit@extension.invalid",
+      "strict_min_version": "109.0"
+    }
+  },
   "content_scripts": [
     {
       "matches": [
         "https://www.immobilienscout24.de/Suche/*",
         "https://www.immobilienscout24.de/*"
       ],
-      "js": ["content.js"],
-      "css": ["style.css"],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "style.css"
+      ],
       "run_at": "document_start"
     }
   ]
